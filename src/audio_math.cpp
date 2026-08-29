@@ -1,49 +1,46 @@
+#include "audio_math.h"
+
+#include <algorithm>
 #include <cmath>
-#include <cstddef>
-#include <iostream>
-#include <vector>
+#include <stdexcept>
 
-int main() {
-    constexpr int sample_rate = 16000;
-    constexpr double duration_seconds = 1.0;
-    constexpr double frequency_hz = 440.0;
-    constexpr double amplitude = 0.5;
-    constexpr double pi = 3.14159265358979323846;
+namespace asr {
 
-    const std::size_t sample_count =
-        static_cast<std::size_t>(sample_rate * duration_seconds);
-
-    std::vector<float> samples(sample_count);
-
-    double sum_of_squares = 0.0;
-
-    for (std::size_t i = 0; i < samples.size(); ++i) {
-        const double time_seconds =
-            static_cast<double>(i) /
-            static_cast<double>(sample_rate);
-
-        samples[i] = static_cast<float>(
-            amplitude *
-            std::sin(2.0 * pi * frequency_hz * time_seconds)
+SignalStats analyze_signal(
+    const std::vector<float>& samples
+) {
+    if (samples.empty()) {
+        throw std::invalid_argument(
+            "cannot analyze an empty signal"
         );
-
-        const double sample = static_cast<double>(samples[i]);
-        sum_of_squares += sample * sample;
     }
 
-    const double measured_duration_seconds =
-        static_cast<double>(samples.size()) /
-        static_cast<double>(sample_rate);
+    float peak_absolute = 0.0F;
+    double sum = 0.0;
+    double sum_of_squares = 0.0;
 
-    const double rms =
-        std::sqrt(sum_of_squares /
-                  static_cast<double>(samples.size()));
+    for (const float sample : samples) {
+        const double value =
+            static_cast<double>(sample);
 
-    std::cout << "sample_rate=" << sample_rate << '\n';
-    std::cout << "sample_count=" << samples.size() << '\n';
-    std::cout << "duration_seconds="
-              << measured_duration_seconds << '\n';
-    std::cout << "rms=" << rms << '\n';
+        sum += value;
+        sum_of_squares += value * value;
 
-    return 0;
+        peak_absolute = std::max(
+            peak_absolute,
+            std::abs(sample)
+        );
+    }
+
+    const double sample_count =
+        static_cast<double>(samples.size());
+
+    return SignalStats{
+        samples.size(),
+        peak_absolute,
+        sum / sample_count,
+        std::sqrt(sum_of_squares / sample_count)
+    };
 }
+
+}  // namespace asr
