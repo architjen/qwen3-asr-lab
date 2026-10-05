@@ -57,3 +57,26 @@ add_test(
     NAME audio_math_test
     COMMAND audio_math_test
 )
+
+add_library(wav_reader_lib STATIC
+    src/wav_reader.cpp
+)
+
+target_include_directories(wav_reader_lib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_options(wav_reader_lib PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wconversion
+)
+
+add_executable(wav_info
+    src/wav_info.cpp
+)
+
+target_link_libraries(wav_info PRIVATE
+    wav_reader_lib
+)
